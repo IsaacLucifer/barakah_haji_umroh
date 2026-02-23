@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stok Toko — Staff</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ══════════════════════════════════════════════════
+   ADAPTIVE THEME — otomatis light/dark
+   sesuai preferensi sistem operasi user
+══════════════════════════════════════════════════ */
+:root {
+  /* Light mode (default) */
+  --bg:         #f5f4f0;
+  --surface:    #ffffff;
+  --surface2:   #f0ede7;
+  --border:     #e2dfd8;
+  --border2:    #ccc9c0;
+  --text:       #1a1916;
+  --text2:      #4a4843;
+  --muted:      #96918a;
+  --green:      #1a6b40;
+  --green-bg:   #e8f4ed;
+  --green-ring: #a5d4b8;
+  --red:        #b53030;
+  --red-bg:     #fbe9e9;
+  --amber:      #8c5c08;
+  --amber-bg:   #fdf0da;
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:  0 4px 20px rgba(0,0,0,.09);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:         #111210;
+    --surface:    #1c1e1b;
+    --surface2:   #252722;
+    --border:     #2e3029;
+    --border2:    #3d4038;
+    --text:       #e8e5de;
+    --text2:      #a09c94;
+    --muted:      #5c5c54;
+    --green:      #4eca7f;
+    --green-bg:   #162a1f;
+    --green-ring: #2a6040;
+    --red:        #f07070;
+    --red-bg:     #2a1616;
+    --amber:      #e8a030;
+    --amber-bg:   #2a2010;
+    --shadow-sm:  0 1px 4px rgba(0,0,0,.3);
+    --shadow-md:  0 4px 20px rgba(0,0,0,.4);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+}
+
+/* ════════════════════════════════
+   LOGIN SCREEN
+════════════════════════════════ */
+#screen-login {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 0%, var(--green-bg) 0%, var(--bg) 60%);
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 40px 36px 36px;
+  width: 100%; max-width: 380px;
+  box-shadow: var(--shadow-md);
+  animation: slideUp .35s ease;
+}
+
+.login-brand {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px; color: var(--text); margin-bottom: 4px; line-height: 1;
+}
+.login-brand em { font-style: italic; color: var(--green); }
+
+.login-sub {
+  font-size: 13px; color: var(--muted); margin-bottom: 28px;
+}
+
+.field { margin-bottom: 14px; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.field-input {
+  width: 100%; padding: 10px 14px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 9px; color: var(--text);
+  font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color .15s, background .15s;
+}
+.field-input:focus {
+  border-color: var(--green); background: var(--surface);
+  box-shadow: 0 0 0 3px var(--green-bg);
+}
+
+.btn-primary {
+  width: 100%; padding: 12px; margin-top: 4px;
+  background: var(--green); color: #fff;
+  font-family: inherit; font-weight: 700; font-size: 14px;
+  border: none; border-radius: 9px; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.btn-primary:hover  { opacity: .88; }
+.btn-primary:active { transform: scale(.99); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+.login-err {
+  font-size: 12.5px; color: var(--red);
+  background: var(--red-bg); border: 1px solid var(--red);
+  border-radius: 8px; padding: 9px 13px; margin-top: 12px; display: none;
+}
+
+/* ════════════════════════════════
+   APP SCREEN
+════════════════════════════════ */
+#screen-app { display: none; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-brand {
+  font-family: 'Instrument Serif', serif;
+  font-size: 20px; color: var(--text); display: flex; align-items: center; gap: 10px;
+}
+.topbar-brand em { font-style: italic; color: var(--green); }
+
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.role-pill {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 100px; letter-spacing: .3px;
+}
+.pill-staff { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-ring); }
+.pill-admin { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
+
+.topbar-email { font-size: 11.5px; color: var(--muted); }
+
+.btn-ghost {
+  font-size: 12px; font-weight: 600; padding: 6px 13px;
+  border-radius: 7px; background: var(--surface2);
+  border: 1px solid var(--border); color: var(--text2);
+  cursor: pointer; text-decoration: none; transition: background .12s;
+}
+.btn-ghost:hover { background: var(--border); }
+
+/* CONTENT */
+.content { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
+
+/* BANNER */
+.banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 13px 16px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text2);
+  animation: slideUp .3s ease;
+}
+.banner-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.banner strong { color: var(--text); }
+
+/* SECTION */
+.sec-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+}
+.sec-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 21px; color: var(--text);
+}
+
+.btn-action {
+  font-size: 12.5px; font-weight: 700; padding: 8px 18px;
+  border-radius: 8px; border: none; color: #fff; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.btn-action:hover  { opacity: .85; }
+.btn-action:active { transform: scale(.98); }
+.bg-green { background: var(--green); }
+.bg-amber { background: var(--amber); }
+
+/* FORM PANEL */
+.form-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  margin-bottom: 16px;
+  display: none;
+  animation: slideUp .2s ease;
+}
+.form-panel.open { display: block; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 1fr auto;
+  gap: 10px; align-items: end;
+}
+@media(max-width:660px) { .form-row { grid-template-columns: 1fr 1fr; } }
+
+.f-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.f-input {
+  width: 100%; padding: 9px 12px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: 13.5px; outline: none;
+  transition: border-color .15s;
+}
+.f-input:focus { border-color: var(--green); background: var(--surface); }
+
+/* ════════════════════════════════
+   SEARCHABLE AUTOCOMPLETE
+   (mirip Google Suggest)
+════════════════════════════════ */
+.ac-wrap { position: relative; }
+
+.ac-field {
+  width: 100%;
+  padding: 9px 34px 9px 36px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: 13.5px; outline: none;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.ac-field:focus {
+  border-color: var(--green);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--green-bg);
+}
+.ac-field.is-selected {
+  border-color: var(--green);
+  background: var(--green-bg);
+  font-weight: 600;
+}
+.ac-field.is-error {
+  border-color: var(--red);
+  background: var(--red-bg);
+}
+
+.ac-icon-left {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 14px; pointer-events: none;
+}
+.ac-icon-right {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--green); font-size: 14px; pointer-events: none;
+  display: none;
+}
+.ac-field.is-selected ~ .ac-icon-right { display: block; }
+
+/* Dropdown */
+.ac-drop {
+  position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  max-height: 240px; overflow-y: auto;
+  display: none;
+}
+.ac-drop.is-open { display: block; animation: dropDown .15s ease; }
+
+@keyframes dropDown {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:none; }
+}
+
+/* Scrollbar dalam dropdown */
+.ac-drop::-webkit-scrollbar { width: 4px; }
+.ac-drop::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.ac-row {
+  padding: 9px 14px; cursor: pointer; font-size: 13.5px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+  color: var(--text);
+}
+.ac-row:last-child { border-bottom: none; }
+.ac-row:hover, .ac-row.is-active {
+  background: var(--surface2);
+}
+.ac-row mark {
+  background: none; color: var(--green);
+  font-weight: 700; text-decoration: none;
+}
+.ac-row .ac-label { flex: 1; }
+.ac-row .ac-sub   { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+.ac-empty {
+  padding: 14px; text-align: center;
+  font-size: 13px; color: var(--muted);
+}
+
+/* ── Simpan button ── */
+.btn-save {
+  font-weight: 700; font-size: 13px; padding: 9px 20px;
+  border-radius: 8px; border: none; color: #fff; cursor: pointer;
+  transition: opacity .15s; white-space: nowrap; align-self: end;
+}
+.btn-save:hover    { opacity: .85; }
+.btn-save:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ════════════════════════════════
+   TABLE CARD
+════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  margin-bottom: 30px;
+  animation: slideUp .3s ease;
+}
+.table-scroll { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+thead th {
+  background: var(--surface2);
+  padding: 10px 16px;
+  text-align: left; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .5px; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th.r { text-align: right; }
+
+tbody td {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  vertical-align: middle; color: var(--text);
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+
+td.r    { text-align: right; }
+td.dim  { color: var(--muted); font-size: 12px; }
+.t-bold { font-weight: 600; }
+
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 2px 9px; border-radius: 5px;
+}
+.badge-in  { background: var(--green-bg); color: var(--green); }
+.badge-out { background: var(--red-bg);   color: var(--red); }
+
+.del-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--border2); font-size: 15px;
+  padding: 2px 6px; border-radius: 4px; transition: color .12s;
+}
+.del-btn:hover { color: var(--red); }
+
+.empty-row {
+  text-align: center; padding: 36px;
+  color: var(--muted); font-size: 13px;
+}
+
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26px; }
+
+.hidden { display: none !important; }
+
+/* ════════════════════════════════
+   TOAST
+════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+  z-index: 9999; font-size: 13px; font-weight: 600;
+  padding: 11px 22px; border-radius: 100px;
+  opacity: 0; transition: opacity .2s, transform .2s;
+  pointer-events: none; white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.ok   { background: var(--text); color: var(--bg); }
+#toast.fail { background: var(--red);  color: #fff; }
+
+/* ════════════════════════════════
+   ANIMATIONS
+════════════════════════════════ */
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:none; }
+}
+
+@media(max-width:600px) {
+  .topbar        { padding: 0 14px; }
+  .content       { padding: 16px 12px 60px; }
+  .login-card    { margin: 16px; }
+  .topbar-email  { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════ -->
+<div id="screen-login">
+  <div class="login-card">
+    <div class="login-brand">stok<em>.</em>toko</div>
+    <div class="login-sub">Masuk ke dashboard staff</div>
+
+    <div class="field">
+      <label class="field-label">Email</label>
+      <input id="inp-email" class="field-input" type="email"
+             placeholder="staff@toko.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label class="field-label">Password</label>
+      <input id="inp-pass" class="field-input" type="password"
+             placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button id="btn-masuk" class="btn-primary" onclick="doLogin()">Masuk →</button>
+    <div id="login-err" class="login-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     APP SCREEN
+════════════════════════════════ -->
+<div id="screen-app">
+
+  <nav class="topbar">
+    <div class="topbar-brand">stok<em>.</em>toko</div>
+    <div class="topbar-right">
+      <span id="role-pill" class="role-pill"></span>
+      <span id="topbar-email" class="topbar-email"></span>
+      <a href="index.html" class="btn-ghost">← Publik</a>
+      <button class="btn-ghost" onclick="doLogout()">Keluar</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- Info banner -->
+    <div class="banner" id="banner">
+      <span class="banner-icon"></span>
+      <span id="banner-text"></span>
+    </div>
+
+    <!-- ══════════════════════════
+         SECTION PENJUALAN
+         Tampil untuk role: staff
+    ═══════════════════════════ -->
+    <div id="sec-jual" class="hidden">
+      <div class="sec-head">
+        <div class="sec-title">Penjualan</div>
+        <button class="btn-action bg-green" onclick="toggleForm('jual')">+ Input Penjualan</button>
+      </div>
+
+      <div id="form-jual" class="form-panel">
+        <div class="form-row">
+
+          <!-- Autocomplete barang -->
+          <div>
+            <label class="f-label">Cari Barang</label>
+            <div class="ac-wrap">
+              <span class="ac-icon-left">🔍</span>
+              <input id="ac-jual" class="ac-field"
+                     type="text"
+                     placeholder="Ketik nama barang…"
+                     autocomplete="off"
+                     oninput="acInput('jual')"
+                     onfocus="acFocus('jual')"
+                     onblur="acBlur('jual')"
+                     onkeydown="acKey(event,'jual')">
+              <span class="ac-icon-right">✓</span>
+              <div id="drop-jual" class="ac-drop" onmousedown="return false"></div>
+            </div>
+            <input type="hidden" id="ac-jual-val">
+          </div>
+
+          <!-- Jumlah -->
+          <div>
+            <label class="f-label">Jumlah</label>
+            <input id="qty-jual" class="f-input" type="number" min="1" value="1">
+          </div>
+
+          <!-- Catatan -->
+          <div>
+            <label class="f-label">Catatan</label>
+            <input id="note-jual" class="f-input" type="text" placeholder="opsional…">
+          </div>
+
+          <button id="save-jual" class="btn-save bg-green" onclick="saveJual()">Simpan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Barang</th><th class="r">Jumlah</th>
+                <th>Catatan</th><th>Waktu</th><th>Oleh</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-jual">
+              <tr><td colspan="5" class="empty-row">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         SECTION PENAMBAHAN STOK
+         Tampil untuk role: admin
+    ══════════════════════════════════ -->
+    <div id="sec-stok" class="hidden">
+      <div class="sec-head">
+        <div class="sec-title">Penambahan Stok</div>
+        <button class="btn-action bg-amber" onclick="toggleForm('stok')">+ Input Stok</button>
+      </div>
+
+      <div id="form-stok" class="form-panel">
+        <div class="form-row">
+
+          <!-- Autocomplete barang -->
+          <div>
+            <label class="f-label">Cari Barang</label>
+            <div class="ac-wrap">
+              <span class="ac-icon-left">🔍</span>
+              <input id="ac-stok" class="ac-field"
+                     type="text"
+                     placeholder="Ketik nama barang…"
+                     autocomplete="off"
+                     oninput="acInput('stok')"
+                     onfocus="acFocus('stok')"
+                     onblur="acBlur('stok')"
+                     onkeydown="acKey(event,'stok')">
+              <span class="ac-icon-right">✓</span>
+              <div id="drop-stok" class="ac-drop" onmousedown="return false"></div>
+            </div>
+            <input type="hidden" id="ac-stok-val">
+          </div>
+
+          <!-- Jumlah -->
+          <div>
+            <label class="f-label">Jumlah Masuk</label>
+            <input id="qty-stok" class="f-input" type="number" min="1" value="1">
+          </div>
+
+          <!-- Catatan -->
+          <div>
+            <label class="f-label">Catatan</label>
+            <input id="note-stok" class="f-input" type="text" placeholder="opsional…">
+          </div>
+
+          <button id="save-stok" class="btn-save bg-amber" onclick="saveStok()">Simpan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Barang</th><th class="r">Jumlah</th>
+                <th>Catatan</th><th>Waktu</th><th>Oleh</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-stok">
+              <tr><td colspan="6" class="empty-row">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Manajemen Produk (admin) -->
+      <hr class="divider">
+      <div class="sec-head">
+        <div class="sec-title">Manajemen Produk</div>
+        <button class="btn-action bg-amber" onclick="toggleForm('produk')" style="opacity:.85">+ Produk Baru</button>
+      </div>
+
+      <div id="form-produk" class="form-panel">
+        <div class="form-row" style="grid-template-columns:1fr 110px 100px auto">
+          <div>
+            <label class="f-label">Nama Produk</label>
+            <input id="inp-pnama" class="f-input" type="text" placeholder="Aqua 600ml">
+          </div>
+          <div>
+            <label class="f-label">Stok Awal</label>
+            <input id="inp-pstok" class="f-input" type="number" min="0" value="0">
+          </div>
+          <div>
+            <label class="f-label">Satuan</label>
+            <input id="inp-psat"  class="f-input" type="text" placeholder="pcs">
+          </div>
+          <button class="btn-save bg-amber" onclick="saveProduk()">Tambah</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Nama</th><th>Satuan</th><th class="r">Stok Awal</th><th>Dibuat</th><th></th></tr>
+            </thead>
+            <tbody id="tbody-produk">
+              <tr><td colspan="5" class="empty-row">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pesan jika role tidak dikenali -->
+    <div id="sec-unknown" class="hidden">
+      <div class="banner" style="border-color:var(--red);background:var(--red-bg)">
+        <span class="banner-icon">⚠️</span>
+        <span>
+          Akun Anda belum memiliki role yang valid.
+          Minta admin untuk menambahkan role di tabel <strong>user_roles</strong>
+          dengan nilai <code>staff</code> atau <code>admin</code>.
+          <br><br>
+          <strong>Email Anda:</strong> <span id="unknown-email" style="font-family:monospace"></span><br>
+          <strong>User ID:</strong>    <span id="unknown-uid"   style="font-family:monospace;font-size:11px"></span>
+        </span>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /screen-app -->
+
+<script>
+/* ════════════════════════════════════════════════
+   ⚙️  KONFIGURASI — ganti dua nilai ini
+════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://fxsnwdhclbwuyzrjtqgk.supabase.co';   // ← Project URL
+const SUPABASE_ANON = 'sb_publishable_mNIqXqKjzK_JUzU_ictKXQ_RBLZJSKP';                // ← anon/public key
+/* ════════════════════════════════════════════════ */
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let me          = null;   // current auth user
+let currentRole = null;   // 'staff' | 'admin' | null
+let produkList  = [];     // [{id, nama, satuan}]
+
+/* ────────────────────────────────
+   TOAST
+──────────────────────────────── */
+function showToast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+/* ────────────────────────────────
+   FORMAT HELPERS
+──────────────────────────────── */
+const fmtTime = ts => new Date(ts).toLocaleString('id-ID', {
+  day:'2-digit', month:'short', year:'numeric',
+  hour:'2-digit', minute:'2-digit'
+});
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ════════════════════════════════
+   AUTOCOMPLETE ENGINE
+   — mirip Google Suggest
+   — keyboard navigable
+════════════════════════════════ */
+const acCursor = { jual: -1, stok: -1 };
+
+// Dipanggil saat user mengetik
+function acInput(key) {
+  const inp = document.getElementById(`ac-${key}`);
+  const q   = inp.value;
+
+  // Reset pilihan
+  document.getElementById(`ac-${key}-val`).value = '';
+  inp.classList.remove('is-selected', 'is-error');
+  acCursor[key] = -1;
+
+  showDrop(key, q);
+}
+
+// Dipanggil saat focus (tampilkan semua jika kosong)
+function acFocus(key) {
+  const q = document.getElementById(`ac-${key}`).value;
+  showDrop(key, q);
+}
+
+// Dipanggil saat blur — delay supaya klik item sempat jalan
+function acBlur(key) {
+  setTimeout(() => closeDrop(key), 200);
+}
+
+// Navigasi keyboard (↑↓ Enter Escape)
+function acKey(e, key) {
+  const drop  = document.getElementById(`drop-${key}`);
+  const rows  = drop.querySelectorAll('.ac-row');
+  const max   = rows.length - 1;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acCursor[key] = Math.min(acCursor[key] + 1, max);
+    highlightRow(key, rows);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acCursor[key] = Math.max(acCursor[key] - 1, 0);
+    highlightRow(key, rows);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (acCursor[key] >= 0 && rows[acCursor[key]]) {
+      rows[acCursor[key]].click();
+    }
+  } else if (e.key === 'Escape') {
+    closeDrop(key);
+  }
+}
+
+function highlightRow(key, rows) {
+  rows.forEach((r, i) => r.classList.toggle('is-active', i === acCursor[key]));
+  rows[acCursor[key]]?.scrollIntoView({ block: 'nearest' });
+}
+
+// Render & buka dropdown
+function showDrop(key, q) {
+  const drop = document.getElementById(`drop-${key}`);
+  const term = q.toLowerCase().trim();
+
+  // Filter: kosong → tampilkan semua; ada teks → filter + sort relevansi
+  let list = produkList;
+  if (term) {
+    list = produkList
+      .filter(p => p.nama.toLowerCase().includes(term))
+      .sort((a, b) => {
+        // prioritaskan yang namanya diawali kata kunci
+        const sa = a.nama.toLowerCase().startsWith(term) ? 0 : 1;
+        const sb = b.nama.toLowerCase().startsWith(term) ? 0 : 1;
+        return sa - sb || a.nama.localeCompare(b.nama);
+      });
+  }
+
+  if (!list.length) {
+    drop.innerHTML = `<div class="ac-empty">Barang tidak ditemukan untuk "<strong>${esc(q)}</strong>"</div>`;
+  } else {
+    drop.innerHTML = list.map((p, idx) => {
+      // Highlight bagian yang cocok
+      let label = esc(p.nama);
+      if (term) {
+        const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+        label = esc(p.nama).replace(re, '<mark>$1</mark>');
+      }
+      return `<div class="ac-row" data-id="${p.id}" data-nama="${esc(p.nama)}" onclick="acPick('${key}',this)">
+        <span class="ac-label">${label}</span>
+        <span class="ac-sub">${esc(p.satuan)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  acCursor[key] = -1;
+  drop.classList.add('is-open');
+}
+
+// Pilih item
+function acPick(key, el) {
+  const id   = el.dataset.id;
+  const nama = el.dataset.nama;
+
+  document.getElementById(`ac-${key}`).value       = nama;
+  document.getElementById(`ac-${key}-val`).value   = id;
+  document.getElementById(`ac-${key}`).classList.add('is-selected');
+  document.getElementById(`ac-${key}`).classList.remove('is-error');
+  closeDrop(key);
+}
+
+function closeDrop(key) {
+  document.getElementById(`drop-${key}`).classList.remove('is-open');
+  acCursor[key] = -1;
+}
+
+// Reset autocomplete setelah simpan
+function resetAc(key) {
+  document.getElementById(`ac-${key}`).value     = '';
+  document.getElementById(`ac-${key}-val`).value = '';
+  document.getElementById(`ac-${key}`).classList.remove('is-selected', 'is-error');
+  closeDrop(key);
+}
+
+/* ════════════════════════════════
+   AUTH
+════════════════════════════════ */
+async function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('btn-masuk');
+
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Masuk…';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+  if (error) {
+    errEl.textContent = 'Email atau password salah. Coba lagi.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Masuk →';
+    return;
+  }
+
+  me = data.user;
+  await bootApp();
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+// Cek session yang sudah ada (auto-login)
+async function checkSession() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    me = session.user;
+    await bootApp();
+  }
+}
+
+/* ════════════════════════════════
+   BOOT APP — load role & setup UI
+════════════════════════════════ */
+async function bootApp() {
+  // Tampilkan app screen dulu
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-app').style.display   = 'block';
+  document.getElementById('topbar-email').textContent   = me.email;
+
+  // Ambil role — pakai .limit(1) agar kompatibel dengan tabel tanpa RLS
+  const { data, error } = await db
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', me.id)
+    .limit(1);
+
+  if (error) {
+    console.error('Gagal baca role:', error.message, '| Pastikan RLS dimatikan untuk tabel user_roles');
+    setupUnknown('DB error: ' + error.message);
+    return;
+  }
+
+  currentRole = (data && data.length > 0) ? data[0].role : null;
+  console.log('User:', me.email, '| Role:', currentRole, '| ID:', me.id);
+
+  if (currentRole === 'staff') {
+    setupStaff();
+  } else if (currentRole === 'admin') {
+    setupAdmin();
+  } else {
+    setupUnknown(null);
+  }
+}
+
+/* ──── Setup per role ──── */
+async function setupStaff() {
+  const pill = document.getElementById('role-pill');
+  pill.textContent = 'Staff';
+  pill.className   = 'role-pill pill-staff';
+
+  document.querySelector('#banner .banner-icon').textContent = '👤';
+  document.getElementById('banner-text').innerHTML =
+    'Login sebagai <strong>Staff</strong> — dapat mengisi data <strong>Penjualan</strong>.';
+
+  document.getElementById('sec-jual').classList.remove('hidden');
+
+  // Load data
+  await loadProduk();    // ← harus duluan sebelum apapun
+  await loadJual();
+  subscribeRealtime();
+}
+
+async function setupAdmin() {
+  const pill = document.getElementById('role-pill');
+  pill.textContent = 'Admin';
+  pill.className   = 'role-pill pill-admin';
+
+  document.querySelector('#banner .banner-icon').textContent = '🔑';
+  document.getElementById('banner-text').innerHTML =
+    'Login sebagai <strong>Admin</strong> — dapat mengisi <strong>Penambahan Stok</strong> dan mengelola produk.';
+
+  document.getElementById('sec-stok').classList.remove('hidden');
+
+  await loadProduk();    // ← harus duluan
+  await loadStok();
+  await loadProdukTable();
+  subscribeRealtime();
+}
+
+function setupUnknown(errMsg) {
+  const pill = document.getElementById('role-pill');
+  pill.textContent   = '?';
+  pill.className     = 'role-pill';
+  pill.style.cssText = 'background:var(--red-bg);color:var(--red);border:1px solid var(--red)';
+
+  document.getElementById('banner').style.display = 'none';
+  document.getElementById('sec-unknown').classList.remove('hidden');
+  document.getElementById('unknown-email').textContent = me.email;
+  document.getElementById('unknown-uid').textContent   = me.id;
+
+  if (errMsg) {
+    const el = document.getElementById('sec-unknown').querySelector('.banner');
+    if (el) el.insertAdjacentHTML('beforeend',
+      `<br><br><strong>Detail error:</strong> <code style="font-size:11px">${errMsg}</code>`);
+  }
+}
+
+/* ════════════════════════════════
+   PRODUK — load ke produkList
+════════════════════════════════ */
+async function loadProduk() {
+  const { data, error } = await db
+    .from('produk')
+    .select('id, nama, satuan')
+    .order('nama');
+
+  if (error) {
+    console.error('loadProduk error:', error.message);
+    showToast('Gagal memuat daftar produk', 'fail');
+    return;
+  }
+
+  produkList = data ?? [];
+  console.log(`✅ produkList loaded: ${produkList.length} items`);
+}
+
+async function loadProdukTable() {
+  const { data } = await db.from('produk').select('*').order('nama');
+  const tb = document.getElementById('tbody-produk');
+  if (!data?.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="empty-row">Belum ada produk. Tambahkan lewat form di atas.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = data.map(p => `<tr>
+    <td class="t-bold">${esc(p.nama)}</td>
+    <td class="dim">${esc(p.satuan)}</td>
+    <td class="r">${p.stok_awal}</td>
+    <td class="dim">${fmtTime(p.created_at)}</td>
+    <td><button class="del-btn" title="Hapus" onclick="delProduk('${p.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+async function saveProduk() {
+  const nama   = document.getElementById('inp-pnama').value.trim();
+  const stok   = parseInt(document.getElementById('inp-pstok').value) || 0;
+  const satuan = document.getElementById('inp-psat').value.trim() || 'pcs';
+  if (!nama) { showToast('Nama produk wajib diisi', 'fail'); return; }
+
+  const { error } = await db.from('produk').insert({ nama, stok_awal: stok, satuan });
+  if (error) { showToast('Gagal tambah: ' + error.message, 'fail'); return; }
+
+  showToast('Produk ditambahkan ✓');
+  document.getElementById('inp-pnama').value = '';
+  document.getElementById('inp-pstok').value = '0';
+  document.getElementById('inp-psat').value  = '';
+
+  await loadProduk();        // refresh list untuk autocomplete
+  await loadProdukTable();
+}
+
+async function delProduk(id) {
+  if (!confirm('Hapus produk ini? Semua riwayat terkait juga terhapus.')) return;
+  const { error } = await db.from('produk').delete().eq('id', id);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'fail'); return; }
+  showToast('Produk dihapus');
+  await loadProduk();
+  await loadProdukTable();
+}
+
+/* ════════════════════════════════
+   PENJUALAN (staff only)
+════════════════════════════════ */
+async function loadJual() {
+  const { data } = await db
+    .from('penjualan_harian')
+    .select('*, produk(nama)')
+    .order('created_at', { ascending: false })
+    .limit(60);
+
+  const tb = document.getElementById('tbody-jual');
+  if (!data?.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="empty-row">Belum ada data penjualan</td></tr>`;
+    return;
+  }
+  tb.innerHTML = data.map(r => `<tr>
+    <td class="t-bold">${esc(r.produk?.nama ?? '—')}</td>
+    <td class="r"><span class="badge badge-out">-${r.jumlah}</span></td>
+    <td class="dim">${esc(r.catatan || '—')}</td>
+    <td class="dim">${fmtTime(r.created_at)}</td>
+    <td class="dim">${esc(r.user_input ?? '—')}</td>
+  </tr>`).join('');
+}
+
+async function saveJual() {
+  const produk_id = document.getElementById('ac-jual-val').value;
+  const jumlah    = parseInt(document.getElementById('qty-jual').value);
+  const catatan   = document.getElementById('note-jual').value.trim();
+
+  const acEl = document.getElementById('ac-jual');
+  if (!produk_id) {
+    acEl.classList.add('is-error');
+    showToast('Pilih barang terlebih dahulu', 'fail');
+    return;
+  }
+  if (!jumlah || jumlah < 1) { showToast('Jumlah tidak valid', 'fail'); return; }
+
+  const btn = document.getElementById('save-jual');
+  btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+  const { error } = await db.from('penjualan_harian').insert({
+    produk_id, jumlah,
+    catatan: catatan || null,
+    user_input: me.email
+  });
+
+  btn.disabled = false; btn.textContent = 'Simpan';
+  if (error) { showToast('Gagal: ' + error.message, 'fail'); return; }
+
+  showToast('Penjualan tersimpan ✓');
+  resetAc('jual');
+  document.getElementById('qty-jual').value  = '1';
+  document.getElementById('note-jual').value = '';
+  await loadJual();
+}
+
+/* ════════════════════════════════
+   PENAMBAHAN STOK (admin only)
+════════════════════════════════ */
+async function loadStok() {
+  const { data } = await db
+    .from('penambahan_stok')
+    .select('*, produk(nama)')
+    .order('created_at', { ascending: false })
+    .limit(60);
+
+  const tb = document.getElementById('tbody-stok');
+  if (!data?.length) {
+    tb.innerHTML = `<tr><td colspan="6" class="empty-row">Belum ada data penambahan stok</td></tr>`;
+    return;
+  }
+  tb.innerHTML = data.map(r => `<tr>
+    <td class="t-bold">${esc(r.produk?.nama ?? '—')}</td>
+    <td class="r"><span class="badge badge-in">+${r.jumlah}</span></td>
+    <td class="dim">${esc(r.catatan || '—')}</td>
+    <td class="dim">${fmtTime(r.created_at)}</td>
+    <td class="dim">${esc(r.user_input ?? '—')}</td>
+    <td><button class="del-btn" title="Hapus" onclick="delStok('${r.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+async function saveStok() {
+  const produk_id = document.getElementById('ac-stok-val').value;
+  const jumlah    = parseInt(document.getElementById('qty-stok').value);
+  const catatan   = document.getElementById('note-stok').value.trim();
+
+  const acEl = document.getElementById('ac-stok');
+  if (!produk_id) {
+    acEl.classList.add('is-error');
+    showToast('Pilih barang terlebih dahulu', 'fail');
+    return;
+  }
+  if (!jumlah || jumlah < 1) { showToast('Jumlah tidak valid', 'fail'); return; }
+
+  const btn = document.getElementById('save-stok');
+  btn.disabled = true; btn.textContent = 'Menyimpan…';
+
+  const { error } = await db.from('penambahan_stok').insert({
+    produk_id, jumlah,
+    catatan: catatan || null,
+    user_input: me.email
+  });
+
+  btn.disabled = false; btn.textContent = 'Simpan';
+  if (error) { showToast('Gagal: ' + error.message, 'fail'); return; }
+
+  showToast('Stok ditambahkan ✓');
+  resetAc('stok');
+  document.getElementById('qty-stok').value  = '1';
+  document.getElementById('note-stok').value = '';
+  await loadStok();
+}
+
+async function delStok(id) {
+  if (!confirm('Hapus data penambahan ini?')) return;
+  const { error } = await db.from('penambahan_stok').delete().eq('id', id);
+  if (error) { showToast('Gagal hapus', 'fail'); return; }
+  showToast('Data dihapus');
+  await loadStok();
+}
+
+/* ════════════════════════════════
+   REALTIME SUBSCRIPTION
+════════════════════════════════ */
+function subscribeRealtime() {
+  const ch = db.channel('app-realtime');
+  if (currentRole === 'staff') {
+    ch.on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'penjualan_harian' },
+      () => loadJual());
+  }
+  if (currentRole === 'admin') {
+    ch.on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'penambahan_stok' },
+      () => loadStok());
+    ch.on('postgres_changes',
+      { event: '*', schema: 'public', table: 'produk' },
+      () => { loadProduk(); loadProdukTable(); });
+  }
+  ch.subscribe();
+}
+
+/* ════════════════════════════════
+   TOGGLE FORM PANEL
+════════════════════════════════ */
+function toggleForm(type) {
+  document.getElementById('form-' + type).classList.toggle('open');
+}
+
+/* ════════════════════════════════
+   ENTER KEY ON LOGIN
+════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' &&
+      document.getElementById('screen-login').style.display !== 'none') {
+    doLogin();
+  }
+});
+
+/* ════════════════════════════════
+   TUTUP DROPDOWN JIKA KLIK LUAR
+════════════════════════════════ */
+document.addEventListener('click', e => {
+  ['jual','stok'].forEach(key => {
+    const wrap = document.getElementById(`ac-${key}`)?.closest('.ac-wrap');
+    if (wrap && !wrap.contains(e.target)) closeDrop(key);
+  });
+});
+
+/* ════════════════════════════════
+   START
+════════════════════════════════ */
+checkSession();
+</script>
+</body>
+</html>
