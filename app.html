@@ -54,6 +54,47 @@
   }
 }
 
+/* Override manual via toggle button */
+body.dark {
+  --bg:         #111210;
+  --surface:    #1c1e1b;
+  --surface2:   #252722;
+  --border:     #2e3029;
+  --border2:    #3d4038;
+  --text:       #e8e5de;
+  --text2:      #a09c94;
+  --muted:      #5c5c54;
+  --green:      #4eca7f;
+  --green-bg:   #162a1f;
+  --green-ring: #2a6040;
+  --red:        #f07070;
+  --red-bg:     #2a1616;
+  --amber:      #e8a030;
+  --amber-bg:   #2a2010;
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.3);
+  --shadow-md:  0 4px 20px rgba(0,0,0,.4);
+}
+
+body.light {
+  --bg:         #f5f4f0;
+  --surface:    #ffffff;
+  --surface2:   #f0ede7;
+  --border:     #e2dfd8;
+  --border2:    #ccc9c0;
+  --text:       #1a1916;
+  --text2:      #4a4843;
+  --muted:      #96918a;
+  --green:      #1a6b40;
+  --green-bg:   #e8f4ed;
+  --green-ring: #a5d4b8;
+  --red:        #b53030;
+  --red-bg:     #fbe9e9;
+  --amber:      #8c5c08;
+  --amber-bg:   #fdf0da;
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:  0 4px 20px rgba(0,0,0,.09);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -166,6 +207,21 @@ body {
   cursor: pointer; text-decoration: none; transition: background .12s;
 }
 .btn-ghost:hover { background: var(--border); }
+
+/* THEME TOGGLE */
+.btn-theme {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-theme:hover { background: var(--border); }
 
 /* CONTENT */
 .content { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
@@ -450,10 +506,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
 <div id="screen-app">
 
   <nav class="topbar">
-    <div class="topbar-brand">stok<em>.</em>toko</div>
+    <div class="topbar-brand">toko<em>.</em>barakah</div>
     <div class="topbar-right">
       <span id="role-pill" class="role-pill"></span>
       <span id="topbar-email" class="topbar-email"></span>
+      <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Ganti tema">🌙</button>
       <a href="index.html" class="btn-ghost">← Publik</a>
       <button class="btn-ghost" onclick="doLogout()">Keluar</button>
     </div>
@@ -657,8 +714,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
 /* ════════════════════════════════════════════════
    ⚙️  KONFIGURASI — ganti dua nilai ini
 ════════════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://fxsnwdhclbwuyzrjtqgk.supabase.co';   // ← Project URL
-const SUPABASE_ANON = 'sb_publishable_mNIqXqKjzK_JUzU_ictKXQ_RBLZJSKP';                // ← anon/public key
+const SUPABASE_URL  = 'https://fxsnwdhclbwuyzrjtqgk.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_mNIqXqKjzK_JUzU_ictKXQ_RBLZJSKP';
 /* ════════════════════════════════════════════════ */
 
 const { createClient } = supabase;
@@ -859,6 +916,7 @@ async function bootApp() {
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-app').style.display   = 'block';
   document.getElementById('topbar-email').textContent   = me.email;
+  applyThemeIcon();
 
   // Ambil role — pakai .limit(1) agar kompatibel dengan tabel tanpa RLS
   const { data, error } = await db
@@ -1168,6 +1226,34 @@ document.addEventListener('click', e => {
     if (wrap && !wrap.contains(e.target)) closeDrop(key);
   });
 });
+
+/* ════════════════════════════════
+   THEME TOGGLE
+   — sinkron dengan index.html
+════════════════════════════════ */
+function toggleTheme() {
+  const dark = document.body.classList.toggle('dark');
+  document.body.classList.toggle('light', !dark);
+  document.getElementById('btn-theme').textContent = dark ? '☀️' : '🌙';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+}
+
+// Terapkan tema tersimpan saat halaman dibuka
+(function() {
+  const saved = localStorage.getItem('theme');
+  const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && preferDark)) {
+    document.body.classList.add('dark');
+    // btn-theme belum ada di DOM saat ini (masih di login screen),
+    // akan di-update setelah app screen muncul
+  }
+})();
+
+// Update ikon setelah app screen tampil
+function applyThemeIcon() {
+  const btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
 
 /* ════════════════════════════════
    START
