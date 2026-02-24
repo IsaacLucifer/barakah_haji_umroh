@@ -481,7 +481,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
 ════════════════════════════════ -->
 <div id="screen-login">
   <div class="login-card">
-    <div class="login-brand">stok<em>.</em>toko</div>
+    <div class="login-brand">staff<em>.</em>barakah</div>
     <div class="login-sub">Masuk ke dashboard staff</div>
 
     <div class="field">
@@ -1241,7 +1241,7 @@ function toggleTheme() {
 // Terapkan tema tersimpan saat halaman dibuka
 (function() {
   const saved = localStorage.getItem('theme');
-  const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const preferDark = window.matchMedia('(prefers-color-scheme: light)').matches;
   if (saved === 'dark' || (!saved && preferDark)) {
     document.body.classList.add('dark');
     // btn-theme belum ada di DOM saat ini (masih di login screen),
