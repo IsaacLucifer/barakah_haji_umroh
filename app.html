@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stok Toko — Staff</title>
+<title>Barakah Shop — Staff</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -361,6 +361,43 @@ body {
 .btn-save:hover    { opacity: .85; }
 .btn-save:disabled { opacity: .4; cursor: not-allowed; }
 
+
+/* ── COLLAPSIBLE SECTION ── */
+.sec-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  padding: 4px 0;
+}
+.sec-header:hover .sec-title { opacity: .75; }
+
+.collapse-btn {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 13px; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, transform .25s;
+  flex-shrink: 0;
+}
+.sec-header:hover .collapse-btn { background: var(--border); }
+.collapse-btn.collapsed { transform: rotate(-90deg); }
+
+.collapsible {
+  overflow: hidden;
+  max-height: 3000px;
+  transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
+  opacity: 1;
+  margin-top: 14px;
+}
+.collapsible.is-collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
 /* ════════════════════════════════
    TABLE CARD
 ════════════════════════════════ */
@@ -517,11 +554,15 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
          Tampil untuk role: staff
     ═══════════════════════════ -->
     <div id="sec-jual" class="hidden">
-      <div class="sec-head">
+      <div class="sec-header" onclick="toggleSection('jual-tbl')">
         <div class="sec-title">Penjualan</div>
-        <button class="btn-action bg-green" onclick="toggleForm('jual')">+ Input Penjualan</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-action bg-green" onclick="event.stopPropagation();toggleForm('jual')">+ Input Penjualan</button>
+          <button class="collapse-btn" id="btn-jual-tbl">▼</button>
+        </div>
       </div>
 
+      <div class="collapsible" id="col-jual-tbl">
       <div id="form-jual" class="form-panel">
         <div class="form-row">
 
@@ -582,11 +623,15 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
          Tampil untuk role: admin
     ══════════════════════════════════ -->
     <div id="sec-stok" class="hidden">
-      <div class="sec-head">
+      <div class="sec-header" onclick="toggleSection('stok-tbl')">
         <div class="sec-title">Penambahan Stok</div>
-        <button class="btn-action bg-amber" onclick="toggleForm('stok')">+ Input Stok</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-action bg-amber" onclick="event.stopPropagation();toggleForm('stok')">+ Input Stok</button>
+          <button class="collapse-btn" id="btn-stok-tbl">▼</button>
+        </div>
       </div>
 
+      <div class="collapsible" id="col-stok-tbl">
       <div id="form-stok" class="form-panel">
         <div class="form-row">
 
@@ -641,13 +686,19 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
         </div>
       </div>
 
+      </div><!-- /col-stok-tbl -->
+
       <!-- Manajemen Produk (admin) -->
       <hr class="divider">
-      <div class="sec-head">
+      <div class="sec-header" onclick="toggleSection('produk-tbl')">
         <div class="sec-title">Manajemen Produk</div>
-        <button class="btn-action bg-amber" onclick="toggleForm('produk')" style="opacity:.85">+ Produk Baru</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-action bg-amber" onclick="event.stopPropagation();toggleForm('produk')" style="opacity:.85">+ Produk Baru</button>
+          <button class="collapse-btn" id="btn-produk-tbl">▼</button>
+        </div>
       </div>
 
+      <div class="collapsible" id="col-produk-tbl">
       <div id="form-produk" class="form-panel">
         <div class="form-row" style="grid-template-columns:1fr 110px 100px auto">
           <div>
@@ -678,6 +729,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
           </table>
         </div>
       </div>
+      </div><!-- /col-produk-tbl -->
     </div>
 
     <!-- Pesan jika role tidak dikenali -->
@@ -905,6 +957,8 @@ async function bootApp() {
   document.getElementById('screen-app').style.display   = 'block';
   document.getElementById('topbar-email').textContent   = me.email;
   applyThemeIcon();
+  // Terapkan state collapse tersimpan
+  setTimeout(() => restoreCollapseState(['jual-tbl','stok-tbl','produk-tbl']), 50);
 
   // Ambil role — pakai .limit(1) agar kompatibel dengan tabel tanpa RLS
   const { data, error } = await db
@@ -1236,6 +1290,27 @@ function applyThemeIcon() {
   else document.body.classList.remove('dark');
   const btn = document.getElementById('btn-theme');
   if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
+
+/* ════════════════════════════════
+   COLLAPSE / EXPAND SECTION
+════════════════════════════════ */
+function toggleSection(key) {
+  const col = document.getElementById('col-' + key);
+  const btn = document.getElementById('btn-' + key);
+  if (!col) return;
+  const collapsed = col.classList.toggle('is-collapsed');
+  btn.classList.toggle('collapsed', collapsed);
+  localStorage.setItem('col-' + key, collapsed ? '1' : '0');
+}
+
+function restoreCollapseState(keys) {
+  keys.forEach(key => {
+    if (localStorage.getItem('col-' + key) === '1') {
+      document.getElementById('col-' + key)?.classList.add('is-collapsed');
+      document.getElementById('btn-' + key)?.classList.add('collapsed');
+    }
+  });
 }
 
 /* ════════════════════════════════
