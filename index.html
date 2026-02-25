@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stok Toko</title>
+<title>Barakah Shop</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -233,6 +233,44 @@
     color: var(--muted); font-size: 13px;
   }
 
+
+  /* ── COLLAPSIBLE SECTION ── */
+  .sec-header {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+    margin-bottom: 0;
+    padding: 4px 0;
+  }
+  .sec-header:hover .sec-title { opacity: .75; }
+
+  .collapse-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--muted);
+    font-size: 13px; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .12s, transform .25s;
+    flex-shrink: 0;
+  }
+  .sec-header:hover .collapse-btn { background: var(--soft); }
+  .collapse-btn.collapsed { transform: rotate(-90deg); }
+
+  .collapsible {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
+    opacity: 1;
+    margin-top: 14px;
+  }
+  .collapsible.is-collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+  }
+
   @keyframes fadeIn {
     from { opacity:0; transform:translateY(10px); }
     to   { opacity:1; transform:none; }
@@ -293,11 +331,15 @@
 <div class="wrap">
 
   <!-- SISA STOK — tampilan utama -->
-  <div class="sec-title">
-    Ringkasan Sisa Stok
-    <span class="live-pill"><span class="live-dot"></span>Live</span>
+  <div class="sec-header" onclick="toggleSection('ringkasan')">
+    <div class="sec-title">
+      Ringkasan Sisa Stok
+      <span class="live-pill"><span class="live-dot"></span>Live</span>
+    </div>
+    <button class="collapse-btn" id="btn-ringkasan">▼</button>
   </div>
 
+  <div class="collapsible" id="col-ringkasan">
   <div class="card">
     <div class="scroll-hint">← geser untuk lihat semua →</div>
     <div class="tbl-scroll">
@@ -321,7 +363,11 @@
   </div>
 
   <!-- RIWAYAT PENJUALAN -->
-  <div class="sec-title">Riwayat Penjualan</div>
+  <div class="sec-header" onclick="toggleSection('jual')">
+    <div class="sec-title">Riwayat Penjualan</div>
+    <button class="collapse-btn" id="btn-jual">▼</button>
+  </div>
+  <div class="collapsible" id="col-jual">
   <div class="card">
     <div class="tbl-scroll">
       <table>
@@ -336,9 +382,14 @@
       </table>
     </div>
   </div>
+  </div><!-- /col-jual -->
 
   <!-- RIWAYAT STOK MASUK -->
-  <div class="sec-title">Riwayat Stok Masuk</div>
+  <div class="sec-header" onclick="toggleSection('masuk')">
+    <div class="sec-title">Riwayat Stok Masuk</div>
+    <button class="collapse-btn" id="btn-masuk">▼</button>
+  </div>
+  <div class="collapsible" id="col-masuk">
   <div class="card">
     <div class="tbl-scroll">
       <table>
@@ -353,6 +404,7 @@
       </table>
     </div>
   </div>
+  </div><!-- /col-masuk -->
 
 </div>
 
@@ -484,6 +536,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-theme').textContent = '☀️';
   }
 });
+
+/* ── COLLAPSE / EXPAND ── */
+function toggleSection(key) {
+  const col = document.getElementById('col-' + key);
+  const btn = document.getElementById('btn-' + key);
+  const collapsed = col.classList.toggle('is-collapsed');
+  btn.classList.toggle('collapsed', collapsed);
+  localStorage.setItem('col-' + key, collapsed ? '1' : '0');
+}
+
+// Terapkan state tersimpan saat load
+(function() {
+  ['ringkasan', 'jual', 'masuk'].forEach(key => {
+    if (localStorage.getItem('col-' + key) === '1') {
+      document.getElementById('col-' + key)?.classList.add('is-collapsed');
+      document.getElementById('btn-' + key)?.classList.add('collapsed');
+    }
+  });
+})();
 
 loadAll();
 subscribe();
