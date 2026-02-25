@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barakah Shop</title>
+<title>Toko Barakah</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -234,42 +234,27 @@
   }
 
 
-  /* ── COLLAPSIBLE SECTION ── */
-  .sec-header {
-    display: flex; align-items: center; justify-content: space-between;
-    cursor: pointer; user-select: none;
-    margin-bottom: 0;
-    padding: 4px 0;
-  }
-  .sec-header:hover .sec-title { opacity: .75; }
 
-  .collapse-btn {
-    width: 28px; height: 28px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--white);
-    color: var(--muted);
-    font-size: 13px; line-height: 1;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .12s, transform .25s;
-    flex-shrink: 0;
-  }
-  .sec-header:hover .collapse-btn { background: var(--soft); }
-  .collapse-btn.collapsed { transform: rotate(-90deg); }
+  /* ── SHOW MORE / LESS ── */
+  /* Sembunyikan baris di atas index ke-5 saat collapsed */
+  tbody.is-preview tr:nth-child(n+6) { display: none; }
 
-  .collapsible {
-    overflow: hidden;
-    max-height: 2000px;
-    transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
-    opacity: 1;
-    margin-top: 14px;
+  .show-more-bar {
+    display: none; /* tampil hanya jika ada lebih dari 5 baris */
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 10px;
   }
-  .collapsible.is-collapsed {
-    max-height: 0;
-    opacity: 0;
-    margin-top: 0;
+  .show-more-bar.has-more { display: block; }
+
+  .btn-show-more {
+    font-size: 12px; font-weight: 600;
+    color: var(--green);
+    background: none; border: none; cursor: pointer;
+    padding: 4px 12px; border-radius: 6px;
+    transition: background .12s;
   }
+  .btn-show-more:hover { background: var(--green-bg); }
 
   @keyframes fadeIn {
     from { opacity:0; transform:translateY(10px); }
@@ -330,16 +315,11 @@
 
 <div class="wrap">
 
-  <!-- SISA STOK — tampilan utama -->
-  <div class="sec-header" onclick="toggleSection('ringkasan')">
-    <div class="sec-title">
-      Ringkasan Sisa Stok
-      <span class="live-pill"><span class="live-dot"></span>Live</span>
-    </div>
-    <button class="collapse-btn" id="btn-ringkasan">▼</button>
+  <!-- SISA STOK -->
+  <div class="sec-title">
+    Ringkasan Sisa Stok
+    <span class="live-pill"><span class="live-dot"></span>Live</span>
   </div>
-
-  <div class="collapsible" id="col-ringkasan">
   <div class="card">
     <div class="scroll-hint">← geser untuk lihat semua →</div>
     <div class="tbl-scroll">
@@ -360,14 +340,15 @@
         </tbody>
       </table>
     </div>
+    <div class="show-more-bar" id="bar-ringkasan">
+      <button class="btn-show-more" onclick="toggleRows('ringkasan')">
+        <span id="label-ringkasan">Lihat semua ▼</span>
+      </button>
+    </div>
   </div>
 
   <!-- RIWAYAT PENJUALAN -->
-  <div class="sec-header" onclick="toggleSection('jual')">
-    <div class="sec-title">Riwayat Penjualan</div>
-    <button class="collapse-btn" id="btn-jual">▼</button>
-  </div>
-  <div class="collapsible" id="col-jual">
+  <div class="sec-title">Riwayat Penjualan</div>
   <div class="card">
     <div class="tbl-scroll">
       <table>
@@ -381,15 +362,15 @@
         </tbody>
       </table>
     </div>
+    <div class="show-more-bar" id="bar-jual">
+      <button class="btn-show-more" onclick="toggleRows('jual')">
+        <span id="label-jual">Lihat semua ▼</span>
+      </button>
+    </div>
   </div>
-  </div><!-- /col-jual -->
 
   <!-- RIWAYAT STOK MASUK -->
-  <div class="sec-header" onclick="toggleSection('masuk')">
-    <div class="sec-title">Riwayat Stok Masuk</div>
-    <button class="collapse-btn" id="btn-masuk">▼</button>
-  </div>
-  <div class="collapsible" id="col-masuk">
+  <div class="sec-title">Riwayat Stok Masuk</div>
   <div class="card">
     <div class="tbl-scroll">
       <table>
@@ -403,8 +384,12 @@
         </tbody>
       </table>
     </div>
+    <div class="show-more-bar" id="bar-masuk">
+      <button class="btn-show-more" onclick="toggleRows('masuk')">
+        <span id="label-masuk">Lihat semua ▼</span>
+      </button>
+    </div>
   </div>
-  </div><!-- /col-masuk -->
 
 </div>
 
@@ -495,9 +480,9 @@ async function loadAll() {
     db.from('penambahan_stok').select('*, produk(nama)').order('created_at', { ascending: false }).limit(40),
     db.from('dashboard_hari_ini').select('*').single()
   ]);
-  if (ringkasan.data) renderRingkasan(ringkasan.data);
-  if (jual.data)      renderJual(jual.data);
-  if (masuk.data)     renderMasuk(masuk.data);
+  if (ringkasan.data) { renderRingkasan(ringkasan.data); applyPreview('ringkasan'); }
+  if (jual.data)      { renderJual(jual.data);      applyPreview('jual'); }
+  if (masuk.data)     { renderMasuk(masuk.data);    applyPreview('masuk'); }
   if (stats.data)     renderStats(stats.data);
 }
 
@@ -537,24 +522,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-/* ── COLLAPSE / EXPAND ── */
-function toggleSection(key) {
-  const col = document.getElementById('col-' + key);
-  const btn = document.getElementById('btn-' + key);
-  const collapsed = col.classList.toggle('is-collapsed');
-  btn.classList.toggle('collapsed', collapsed);
-  localStorage.setItem('col-' + key, collapsed ? '1' : '0');
+/* ── SHOW MORE / LESS ── */
+const PREVIEW_ROWS = 5; // baris yang tampil saat collapsed
+const expandedState = {}; // key -> true jika expanded
+
+function applyPreview(key) {
+  const tb    = document.getElementById('tbody-' + key);
+  const bar   = document.getElementById('bar-'   + key);
+  const label = document.getElementById('label-' + key);
+  if (!tb) return;
+
+  const rowCount = tb.querySelectorAll('tr').length;
+
+  if (rowCount <= PREVIEW_ROWS) {
+    // tidak cukup baris untuk perlu tombol
+    tb.classList.remove('is-preview');
+    bar.classList.remove('has-more');
+    return;
+  }
+
+  bar.classList.add('has-more');
+  if (expandedState[key]) {
+    tb.classList.remove('is-preview');
+    label.textContent = 'Lebih sedikit ▲';
+  } else {
+    tb.classList.add('is-preview');
+    label.textContent = `Lihat semua (${rowCount}) ▼`;
+  }
 }
 
-// Terapkan state tersimpan saat load
-(function() {
-  ['ringkasan', 'jual', 'masuk'].forEach(key => {
-    if (localStorage.getItem('col-' + key) === '1') {
-      document.getElementById('col-' + key)?.classList.add('is-collapsed');
-      document.getElementById('btn-' + key)?.classList.add('collapsed');
-    }
-  });
-})();
+function toggleRows(key) {
+  expandedState[key] = !expandedState[key];
+  applyPreview(key);
+}
 
 loadAll();
 subscribe();
