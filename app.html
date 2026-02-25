@@ -666,6 +666,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
             </tbody>
           </table>
         </div>
+        <div class="show-more-bar" id="bar-stok">
+          <button class="btn-show-more" onclick="toggleRows('stok')">
+            <span id="label-stok">Lihat semua ▼</span>
+          </button>
+        </div>
       </div>
 
 
@@ -704,6 +709,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
               <tr><td colspan="5" class="empty-row">Memuat…</td></tr>
             </tbody>
           </table>
+        </div>
+        <div class="show-more-bar" id="bar-produk">
+          <button class="btn-show-more" onclick="toggleRows('produk')">
+            <span id="label-produk">Lihat semua ▼</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1036,6 +1046,7 @@ async function loadProdukTable() {
   const tb = document.getElementById('tbody-produk');
   if (!data?.length) {
     tb.innerHTML = `<tr><td colspan="5" class="empty-row">Belum ada produk. Tambahkan lewat form di atas.</td></tr>`;
+    applyPreview('produk');
     return;
   }
   tb.innerHTML = data.map(p => `<tr>
@@ -1045,6 +1056,7 @@ async function loadProdukTable() {
     <td class="dim">${fmtTime(p.created_at)}</td>
     <td><button class="del-btn" title="Hapus" onclick="delProduk('${p.id}')">✕</button></td>
   </tr>`).join('');
+  applyPreview('produk');
 }
 
 async function saveProduk() {
