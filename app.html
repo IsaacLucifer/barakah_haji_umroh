@@ -459,6 +459,81 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
 /* ════════════════════════════════
    ANIMATIONS
 ════════════════════════════════ */
+
+/* ════════════════════════════════
+   LAPORAN HARIAN
+════════════════════════════════ */
+.laporan-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 16px;
+}
+.laporan-search {
+  display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap;
+}
+.f-select {
+  padding: 8px 12px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: 13px; outline: none;
+  transition: border-color .15s; cursor: pointer;
+}
+.f-select:focus { border-color: var(--green); background: var(--surface); }
+
+.btn-pdf {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 700; padding: 8px 16px;
+  border-radius: 8px; border: none;
+  background: var(--red); color: #fff;
+  cursor: pointer; transition: opacity .15s; white-space: nowrap;
+}
+.btn-pdf:hover { opacity: .85; }
+.btn-pdf:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Tabel laporan per hari */
+.lap-day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.lap-day-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px; cursor: pointer; user-select: none;
+  transition: background .1s;
+}
+.lap-day-head:hover { background: var(--surface2); }
+.lap-day-date {
+  font-weight: 700; font-size: 13.5px; color: var(--text);
+}
+.lap-day-meta {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.lap-day-meta .tag { font-size: 11px; }
+.lap-day-chevron {
+  color: var(--muted); font-size: 12px; transition: transform .25s; flex-shrink: 0;
+}
+.lap-day-chevron.open { transform: rotate(180deg); }
+.lap-day-body {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+.lap-day-body.open { display: block; }
+.lap-sub-title {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--muted);
+  padding: 10px 16px 6px;
+}
+.lap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lap-table td {
+  padding: 8px 16px; border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.lap-table tr:last-child td { border-bottom: none; }
+.lap-empty {
+  padding: 12px 16px; font-size: 12px; color: var(--muted);
+}
+
 @keyframes slideUp {
   from { opacity:0; transform:translateY(12px); }
   to   { opacity:1; transform:none; }
@@ -491,7 +566,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
 ════════════════════════════════ -->
 <div id="screen-login">
   <div class="login-card">
-    <div class="login-brand">staff<em>.</em>login</div>
+    <div class="login-brand">toko<em>.</em>barakah</div>
     <div class="login-sub">Masuk ke dashboard staff</div>
 
     <div class="field">
@@ -715,6 +790,45 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 26
             <span id="label-produk">Lihat semua ▼</span>
           </button>
         </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════
+         SECTION LAPORAN HARIAN
+         Tampil untuk role: admin
+    ══════════════════════════════════ -->
+    <div id="sec-laporan" class="hidden">
+      <hr class="divider">
+
+      <div class="sec-head" style="margin-bottom:14px">
+        <div class="sec-title">Laporan Harian</div>
+        <button class="btn-pdf" id="btn-download-pdf" onclick="downloadPDF()">
+          ⬇ Download PDF
+        </button>
+      </div>
+
+      <!-- Filter pencarian -->
+      <div class="laporan-toolbar">
+        <div class="laporan-search">
+          <select class="f-select" id="filter-bulan" onchange="renderLaporan()">
+            <option value="">Semua Bulan</option>
+            <option value="01">Januari</option><option value="02">Februari</option>
+            <option value="03">Maret</option><option value="04">April</option>
+            <option value="05">Mei</option><option value="06">Juni</option>
+            <option value="07">Juli</option><option value="08">Agustus</option>
+            <option value="09">September</option><option value="10">Oktober</option>
+            <option value="11">November</option><option value="12">Desember</option>
+          </select>
+          <select class="f-select" id="filter-tahun" onchange="renderLaporan()">
+            <option value="">Semua Tahun</option>
+          </select>
+          <button class="btn-ghost" onclick="resetFilter()">Reset</button>
+        </div>
+      </div>
+
+      <div id="lap-list">
+        <div class="empty-row" style="text-align:center;padding:36px;color:var(--muted)">Memuat data…</div>
       </div>
     </div>
 
@@ -997,10 +1111,12 @@ async function setupAdmin() {
     'Login sebagai <strong>Admin</strong> — dapat mengisi <strong>Penambahan Stok</strong> dan mengelola produk.';
 
   document.getElementById('sec-stok').classList.remove('hidden');
+  document.getElementById('sec-laporan').classList.remove('hidden');
 
   await loadProduk();    // ← harus duluan
   await loadStok();
   await loadProdukTable();
+  await loadLaporan();
   subscribeRealtime();
 }
 
@@ -1220,11 +1336,15 @@ function subscribeRealtime() {
     ch.on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'penjualan_harian' },
       () => loadJual());
+  } else if (currentRole === 'admin') {
+    ch.on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'penjualan_harian' },
+      () => loadLaporan());
   }
   if (currentRole === 'admin') {
     ch.on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'penambahan_stok' },
-      () => loadStok());
+      () => { loadStok(); loadLaporan(); });
     ch.on('postgres_changes',
       { event: '*', schema: 'public', table: 'produk' },
       () => { loadProduk(); loadProdukTable(); });
@@ -1312,6 +1432,313 @@ function applyPreview(key) {
 function toggleRows(key) {
   expandedState[key] = !expandedState[key];
   applyPreview(key);
+}
+
+/* ════════════════════════════════
+   LAPORAN HARIAN
+════════════════════════════════ */
+
+// Semua data mentah disimpan di sini setelah load
+let laporanData = { jual: [], stok: [] };
+
+async function loadLaporan() {
+  const [resJual, resStok] = await Promise.all([
+    db.from('penjualan_harian')
+      .select('*, produk(nama)')
+      .order('created_at', { ascending: false }),
+    db.from('penambahan_stok')
+      .select('*, produk(nama)')
+      .order('created_at', { ascending: false })
+  ]);
+
+  laporanData.jual  = resJual.data  ?? [];
+  laporanData.stok  = resStok.data  ?? [];
+
+  populateTahun();
+  renderLaporan();
+}
+
+// Isi dropdown tahun dari data
+function populateTahun() {
+  const years = new Set();
+  [...laporanData.jual, ...laporanData.stok].forEach(r => {
+    years.add(new Date(r.created_at).getFullYear());
+  });
+  const sel = document.getElementById('filter-tahun');
+  // jaga option "Semua Tahun"
+  sel.innerHTML = '<option value="">Semua Tahun</option>';
+  [...years].sort((a,b) => b-a).forEach(y => {
+    sel.innerHTML += `<option value="${y}">${y}</option>`;
+  });
+}
+
+function resetFilter() {
+  document.getElementById('filter-bulan').value = '';
+  document.getElementById('filter-tahun').value = '';
+  renderLaporan();
+}
+
+// Kelompokkan array by tanggal (YYYY-MM-DD)
+function groupByDate(arr) {
+  const map = {};
+  arr.forEach(r => {
+    const d = r.created_at.slice(0, 10); // "2025-01-15"
+    if (!map[d]) map[d] = [];
+    map[d].push(r);
+  });
+  return map;
+}
+
+function fmtDateLabel(dateStr) {
+  // "2025-01-15" → "Rabu, 15 Januari 2025"
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+}
+
+function renderLaporan() {
+  const bulan = document.getElementById('filter-bulan').value;
+  const tahun = document.getElementById('filter-tahun').value;
+
+  // Filter sesuai pilihan
+  function filterArr(arr) {
+    return arr.filter(r => {
+      const d = new Date(r.created_at);
+      if (bulan && String(d.getMonth() + 1).padStart(2,'0') !== bulan) return false;
+      if (tahun && String(d.getFullYear()) !== tahun) return false;
+      return true;
+    });
+  }
+
+  const jual = filterArr(laporanData.jual);
+  const stok = filterArr(laporanData.stok);
+
+  // Gabungkan semua tanggal unik
+  const allDates = new Set([
+    ...jual.map(r => r.created_at.slice(0,10)),
+    ...stok.map(r => r.created_at.slice(0,10))
+  ]);
+
+  const sortedDates = [...allDates].sort((a,b) => b.localeCompare(a));
+
+  const jualByDate = groupByDate(jual);
+  const stokByDate = groupByDate(stok);
+
+  const container = document.getElementById('lap-list');
+
+  if (!sortedDates.length) {
+    container.innerHTML = `<div class="empty-row" style="text-align:center;padding:36px;color:var(--muted)">
+      Tidak ada data untuk filter yang dipilih</div>`;
+    return;
+  }
+
+  container.innerHTML = sortedDates.map(date => {
+    const jualRows = jualByDate[date] ?? [];
+    const stokRows = stokByDate[date] ?? [];
+    const totalJual = jualRows.reduce((s,r) => s + r.jumlah, 0);
+    const totalStok = stokRows.reduce((s,r) => s + r.jumlah, 0);
+
+    const jualHTML = jualRows.length
+      ? jualRows.map(r => `<tr>
+          <td>${esc(r.produk?.nama ?? '—')}</td>
+          <td style="text-align:right"><span class="badge badge-out">-${r.jumlah}</span></td>
+          <td style="color:var(--muted);font-size:12px">${esc(r.catatan||'—')}</td>
+          <td style="color:var(--muted);font-size:12px">${fmtTime(r.created_at)}</td>
+          <td style="color:var(--muted);font-size:12px">${esc(r.user_input||'—')}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="5" class="lap-empty">Tidak ada penjualan</td></tr>`;
+
+    const stokHTML = stokRows.length
+      ? stokRows.map(r => `<tr>
+          <td>${esc(r.produk?.nama ?? '—')}</td>
+          <td style="text-align:right"><span class="badge badge-in">+${r.jumlah}</span></td>
+          <td style="color:var(--muted);font-size:12px">${esc(r.catatan||'—')}</td>
+          <td style="color:var(--muted);font-size:12px">${fmtTime(r.created_at)}</td>
+          <td style="color:var(--muted);font-size:12px">${esc(r.user_input||'—')}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="5" class="lap-empty">Tidak ada penambahan stok</td></tr>`;
+
+    return `<div class="lap-day" id="lapday-${date}">
+      <div class="lap-day-head" onclick="toggleDay('${date}')">
+        <div>
+          <div class="lap-day-date">${fmtDateLabel(date)}</div>
+        </div>
+        <div class="lap-day-meta">
+          <span class="badge badge-out">Jual: ${totalJual}</span>
+          <span class="badge badge-in">Masuk: ${totalStok}</span>
+          <span class="lap-day-chevron" id="chev-${date}">▼</span>
+        </div>
+      </div>
+      <div class="lap-day-body" id="body-${date}">
+        <div class="lap-sub-title">Penjualan</div>
+        <div style="overflow-x:auto">
+          <table class="lap-table">
+            <thead><tr style="background:var(--surface2)">
+              <th style="padding:7px 16px;text-align:left;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Barang</th>
+              <th style="padding:7px 16px;text-align:right;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Jml</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Catatan</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Waktu</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Oleh</th>
+            </tr></thead>
+            <tbody>${jualHTML}</tbody>
+          </table>
+        </div>
+        <div class="lap-sub-title" style="border-top:1px solid var(--border);margin-top:4px">Penambahan Stok</div>
+        <div style="overflow-x:auto">
+          <table class="lap-table">
+            <thead><tr style="background:var(--surface2)">
+              <th style="padding:7px 16px;text-align:left;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Barang</th>
+              <th style="padding:7px 16px;text-align:right;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Jml</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Catatan</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Waktu</th>
+              <th style="padding:7px 16px;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Oleh</th>
+            </tr></thead>
+            <tbody>${stokHTML}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDay(date) {
+  const body = document.getElementById('body-' + date);
+  const chev = document.getElementById('chev-' + date);
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+}
+
+/* ── DOWNLOAD PDF ── */
+async function downloadPDF() {
+  const btn = document.getElementById('btn-download-pdf');
+  btn.disabled = true; btn.textContent = '⏳ Membuat PDF…';
+
+  try {
+    // Load jsPDF dari CDN
+    if (!window.jspdf) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const bulan   = document.getElementById('filter-bulan').value;
+    const tahun   = document.getElementById('filter-tahun').value;
+    const namaBln = bulan ? document.getElementById('filter-bulan').options[document.getElementById('filter-bulan').selectedIndex].text : 'Semua Bulan';
+    const namaThn = tahun || 'Semua Tahun';
+
+    // Header
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text('Laporan Harian — Stok Toko', 14, 18);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.setTextColor(120);
+    doc.text(`Filter: ${namaBln} / ${namaThn}`, 14, 25);
+    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 30);
+    doc.setTextColor(0);
+
+    // Ambil data sesuai filter
+    function filterArr(arr) {
+      return arr.filter(r => {
+        const d = new Date(r.created_at);
+        if (bulan && String(d.getMonth()+1).padStart(2,'0') !== bulan) return false;
+        if (tahun && String(d.getFullYear()) !== tahun) return false;
+        return true;
+      });
+    }
+    const jual = filterArr(laporanData.jual);
+    const stok = filterArr(laporanData.stok);
+    const allDates = [...new Set([
+      ...jual.map(r=>r.created_at.slice(0,10)),
+      ...stok.map(r=>r.created_at.slice(0,10))
+    ])].sort((a,b)=>b.localeCompare(a));
+
+    const jualByDate = groupByDate(jual);
+    const stokByDate = groupByDate(stok);
+
+    let y = 36;
+
+    allDates.forEach((date, idx) => {
+      const jualRows = jualByDate[date] ?? [];
+      const stokRows = stokByDate[date] ?? [];
+      const totalJ = jualRows.reduce((s,r)=>s+r.jumlah,0);
+      const totalS = stokRows.reduce((s,r)=>s+r.jumlah,0);
+
+      // Judul hari
+      if (y > 260) { doc.addPage(); y = 16; }
+      doc.setFontSize(11); doc.setFont('helvetica','bold');
+      doc.setFillColor(240,240,238);
+      doc.rect(14, y-4, 182, 8, 'F');
+      doc.text(fmtDateLabel(date), 16, y+1);
+      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.setTextColor(100);
+      doc.text(`Terjual: ${totalJ}   Masuk: ${totalS}`, 160, y+1, {align:'right'});
+      doc.setTextColor(0);
+      y += 10;
+
+      // Tabel penjualan
+      if (jualRows.length) {
+        doc.autoTable({
+          startY: y,
+          head: [['Barang','Jumlah','Catatan','Waktu','Oleh']],
+          body: jualRows.map(r=>[
+            r.produk?.nama??'—', r.jumlah, r.catatan||'—',
+            fmtTime(r.created_at), r.user_input||'—'
+          ]),
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [26,107,64], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [248,252,250] },
+          margin: { left: 14, right: 14 },
+          theme: 'striped',
+        });
+        y = doc.lastAutoTable.finalY + 4;
+      }
+
+      // Tabel stok masuk
+      if (stokRows.length) {
+        if (y > 255) { doc.addPage(); y = 16; }
+        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80);
+        doc.text('Penambahan Stok:', 14, y+1);
+        doc.setTextColor(0); y += 5;
+        doc.autoTable({
+          startY: y,
+          head: [['Barang','Jumlah','Catatan','Waktu','Oleh']],
+          body: stokRows.map(r=>[
+            r.produk?.nama??'—', r.jumlah, r.catatan||'—',
+            fmtTime(r.created_at), r.user_input||'—'
+          ]),
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [140,92,8], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [254,248,240] },
+          margin: { left: 14, right: 14 },
+          theme: 'striped',
+        });
+        y = doc.lastAutoTable.finalY + 4;
+      }
+
+      y += 4; // spasi antar hari
+    });
+
+    const filterSlug = [namaBln, namaThn].filter(s=>s&&!s.includes('Semua')).join('-') || 'semua';
+    doc.save(`laporan-${filterSlug}-${new Date().toISOString().slice(0,10)}.pdf`);
+    showToast('PDF berhasil didownload ✓');
+
+  } catch(e) {
+    showToast('Gagal buat PDF: ' + e.message, 'fail');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬇ Download PDF';
+  }
 }
 
 /* ════════════════════════════════
